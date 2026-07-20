@@ -286,7 +286,7 @@
     <div id="modal" class="modal"><img id="modalImg" src="" alt="大图预览"></div>
 
     <script>
-        // ===================== 固定配置（内置Token，无需输入）=====================
+        // ===================== 配置区（修改这两处即可，无明文令牌）=====================
         const GITHUB_CONFIG = {
             repo: "leoleex/leoleex.github.io",
             branch: "main",
@@ -294,8 +294,49 @@
             fileDir: "f/",
             customDomain: "https://sc.l.cd",
             rawDomain: "https://leoleex.github.io",
-            token: "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"
+            // 粘贴控制台生成的加密密文
+            encryptedToken: "DSEbAUFXPDkIOypCWwspJmByLgBZJTk/BBwhJmFMKnAeECAbHS4oLl1+FRE9OwQLKS8YUEwMEyQdAwdDGzEEOWUMIA4qPSNLMgktBnwDOg9aCjQ3Jy49P3tWUCQo"
         };
+        // 你设置的页面解锁密码（访问页面弹窗输入的密码）
+        const DECRYPT_PASSWORD = "jHoi45cIiOus";
+
+        // 简易异或加解密（纯前端，无任何外部脚本依赖）
+        function simpleXorCrypt(str, key) {
+            let out = "";
+            for (let i = 0; i < str.length; i++) {
+                const charCode = str.charCodeAt(i) ^ key.charCodeAt(i % key.length);
+                out += String.fromCharCode(charCode);
+            }
+            return out;
+        }
+        // 解密获取真实可用的GitHub令牌
+        function getRealToken(inputPwd) {
+            if(inputPwd !== DECRYPT_PASSWORD) return null;
+            const decodeStr = atob(GITHUB_CONFIG.encryptedToken);
+            return simpleXorCrypt(decodeStr, DECRYPT_PASSWORD);
+        }
+
+        // 页面加载强制弹窗输入密码，验证通过才启用全部上传功能
+        let ghToken = "";
+        async function initAuth() {
+            let inputPwd = prompt("请输入页面解锁密码，解锁文件上传功能：");
+            while(true) {
+                if(!inputPwd) {
+                    alert("密码不能为空，刷新页面重新输入");
+                    location.reload();
+                    return;
+                }
+                const realTk = getRealToken(inputPwd);
+                if(realTk) {
+                    ghToken = realTk;
+                    showToast("密码验证成功，可正常上传文件", "success");
+                    break;
+                } else {
+                    inputPwd = prompt("密码错误，请重新输入解锁密码：");
+                }
+            }
+        }
+
         // 生成4位随机字母数字哈希
         function get4RandomHash() {
             const chars = "0123456789abcdefghijklmnopqrstuvwxyz";
@@ -305,21 +346,20 @@
             }
             return res;
         }
-        // 错误文本中文翻译映射
+        // 错误中文翻译
         function getChineseErrMsg(rawMsg) {
-            if(rawMsg.includes("Maximum call stack size exceeded")) return "上传队列递归调用溢出，请减少单次上传文件数量";
-            if(rawMsg.includes("401")) return "令牌无效/过期，请重新生成GitHub私有令牌";
-            if(rawMsg.includes("422")) return "文件路径重复或参数格式错误";
-            if(rawMsg.includes("403")) return "令牌权限不足，需开启仓库Contents读写权限";
-            if(rawMsg.includes("network")) return "网络连接失败，请检查网络";
+            if(rawMsg.includes("Maximum call stack size exceeded")) return "单次文件过多，减少文件后重试";
+            if(rawMsg.includes("401")) return "令牌解密失败或密码错误";
+            if(rawMsg.includes("422")) return "文件名称重复，等待片刻重试";
+            if(rawMsg.includes("403")) return "令牌权限不足，重新生成令牌";
+            if(rawMsg.includes("network")) return "网络连接失败，检查网络";
             return "上传异常：" + rawMsg;
         }
         // 全局变量
-        let uploadMode = "img"; // img / file
+        let uploadMode = "img";
         let uploadQuality = 0.75;
         let pendingFiles = [];
         let uploadHistory = JSON.parse(localStorage.getItem("ghFileHistory")) || [];
-        const ghToken = GITHUB_CONFIG.token;
         // DOM快捷选择器
         const $ = s => document.querySelector(s);
         const $$ = s => document.querySelectorAll(s);
@@ -340,7 +380,10 @@
         const closeHelpBtn = $("#closeHelpBtn");
         const compressionWrap = $("#compressionWrap");
 
-        // 暗黑主题初始化
+        // 页面加载先校验密码
+        initAuth();
+
+        // 暗黑主题
         if(localStorage.getItem("darkMode") === "1") document.body.classList.add("dark-mode");
         themeBtn.onclick = () => {
             document.body.classList.toggle("dark-mode");
@@ -349,7 +392,7 @@
         }
         themeBtn.innerText = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
 
-        // 帮助弹窗开关
+        // 帮助弹窗
         helpBtn.onclick = () => helpModal.classList.add("show");
         closeHelpBtn.onclick = () => helpModal.classList.remove("show");
         helpModal.onclick = e => e.target === helpModal && helpModal.classList.remove("show");
@@ -361,12 +404,11 @@
                 $$(".mode-btn").forEach(b => b.classList.remove("active"));
                 btn.classList.add("active");
                 uploadMode = btn.dataset.mode;
-                // 通用文件模式隐藏压缩选项
                 compressionWrap.classList.toggle("compression-hide", uploadMode === "file");
             }
         })
 
-        // 图片压缩档位切换
+        // 压缩档位切换
         $$(".compression-option").forEach(el => {
             el.onclick = () => {
                 $$(".compression-option").forEach(i => i.classList.remove("active"));
@@ -385,7 +427,7 @@
         }
         fileInput.onchange = () => handleFiles(fileInput.files);
 
-        // 文件校验 & 加入待上传列表
+        // 文件校验
         function handleFiles(files) {
             const maxCount = 50 - pendingFiles.length;
             const arr = Array.from(files).slice(0, maxCount);
@@ -393,14 +435,14 @@
             arr.forEach(file => {
                 if(file.size > maxSize) {
                     const limitMB = uploadMode === "img" ? "10" : "25";
-                    return showToast(`文件 ${file.name} 超过${limitMB}MB限制，跳过`, "error");
+                    return showToast(`文件 ${file.name} 超过${limitMB}MB限制，已跳过`, "error");
                 }
                 pendingFiles.push(file);
                 renderPending();
             })
         }
 
-        // 渲染待上传预览列表（简化渲染，减少闭包递归）
+        // 渲染待上传列表
         function renderPending() {
             pendingList.innerHTML = "";
             pendingCount.innerText = `${pendingFiles.length}个`;
@@ -408,7 +450,6 @@
             pendingFiles.forEach((file, idx) => {
                 const div = document.createElement("div");
                 div.className = "pending-item";
-                // 分离读取逻辑，避免多层嵌套递归
                 if(/^image\//.test(file.type)) {
                     const tempUrl = URL.createObjectURL(file);
                     div.innerHTML = `
@@ -416,7 +457,6 @@
                         <button class="remove" data-idx="${idx}">&times;</button>
                         <div class="size">${(file.size / 1024 / 1024).toFixed(2)}MB</div>
                     `;
-                    // 释放临时url，减少内存堆栈占用
                     div.querySelector("img").onload = () => URL.revokeObjectURL(tempUrl);
                 } else {
                     div.className += " pending-file-item";
@@ -429,7 +469,6 @@
                 }
                 pendingList.appendChild(div);
             })
-            // 删除单文件事件绑定
             $$(".pending-item .remove").forEach(btn => {
                 btn.onclick = e => {
                     const i = parseInt(e.target.dataset.idx);
@@ -439,7 +478,7 @@
             })
         }
 
-        // 图片压缩函数（仅图片模式执行）
+        // 图片压缩
         async function compressImage(file, quality) {
             const losslessTypes = ["image/gif","image/svg+xml","image/avif","image/heic","image/bmp","image/ico"];
             if(losslessTypes.includes(file.type)) return file;
@@ -464,7 +503,7 @@
             })
         }
 
-        // 单文件上传核心函数
+        // 单文件上传
         async function uploadSingle(file) {
             let targetFile, saveDir;
             if(uploadMode === "img") {
@@ -474,12 +513,10 @@
                 targetFile = file;
                 saveDir = GITHUB_CONFIG.fileDir;
             }
-            // 新命名规则：Leo_(时间戳)_(四位随机哈希)_原文件名
             const timestamp = Date.now();
             const randomHash = get4RandomHash();
             const fileName = `Leo_${timestamp}_${randomHash}_${targetFile.name}`;
             const fullPath = saveDir + fileName;
-            // 标准Base64转换（GitHub接口强制要求）
             const base64Data = await new Promise((resolve) => {
                 const fr = new FileReader();
                 fr.onload = () => resolve(fr.result.split(",")[1]);
@@ -508,21 +545,18 @@
             }
         }
 
-        // 批量上传按钮（完全复刻你参考项目安全串行循环，杜绝栈溢出）
+        // 批量上传按钮
         uploadBtn.onclick = async () => {
             if(pendingFiles.length === 0) return showToast("请先选择待上传文件", "error");
             uploadBtn.disabled = true;
             uploadBtn.innerHTML = `<span class="spinner"></span>上传中...`;
             const successItems = [];
-            // 复制队列，隔离原数组，同步串行逐个上传
             const uploadQueue = [...pendingFiles];
             try {
-                // 标准for of串行，每完成一个释放调用栈
                 for(const file of uploadQueue) {
                     const result = await uploadSingle(file);
                     successItems.push(result);
                 }
-                // 写入本地历史
                 uploadHistory = [...successItems, ...uploadHistory];
                 localStorage.setItem("ghFileHistory", JSON.stringify(uploadHistory));
                 pendingFiles = [];
@@ -530,7 +564,6 @@
                 renderHistory();
                 showToast(`成功上传 ${successItems.length} 个文件`, "success");
             } catch(err) {
-                // 翻译英文报错为中文提示
                 const chineseMsg = getChineseErrMsg(err.message);
                 showToast("上传失败：" + chineseMsg, "error");
             } finally {
@@ -539,7 +572,7 @@
             }
         }
 
-        // 渲染上传历史表格
+        // 渲染历史表格
         function renderHistory() {
             historyCount.innerText = `${uploadHistory.length}个文件`;
             if(uploadHistory.length === 0) {
@@ -585,12 +618,10 @@
             tableHtml += `</tbody></table>`;
             historyContainer.innerHTML = tableHtml;
         }
-        // 大图预览弹窗（仅图片有效）
         window.openPreview = url => {
             modalImg.src = url;
             modal.classList.add("show");
         }
-        // 一键复制链接
         window.copyUrl = async (url, btnEl) => {
             await navigator.clipboard.writeText(url);
             btnEl.classList.add("copied");
@@ -601,7 +632,6 @@
             }, 1300)
             showToast("链接复制成功", "success");
         }
-        // 删除本地历史记录（不删仓库源文件）
         window.removeLocalRecord = idx => {
             uploadHistory.splice(idx, 1);
             localStorage.setItem("ghFileHistory", JSON.stringify(uploadHistory));
@@ -609,14 +639,13 @@
             showToast("已删除本地记录", "success");
         }
 
-        // 全局轻提示
+        // 全局提示
         function showToast(text, type="") {
             toast.innerText = text;
             toast.className = "toast show " + type;
             setTimeout(()=>toast.classList.remove("show"), 2600);
         }
 
-        // 页面加载自动渲染历史
         renderHistory();
     </script>
 </body>
