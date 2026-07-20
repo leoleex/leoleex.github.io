@@ -305,6 +305,15 @@
             }
             return res;
         }
+        // 错误文本中文翻译映射
+        function getChineseErrMsg(rawMsg) {
+            if(rawMsg.includes("Maximum call stack size exceeded")) return "上传队列递归调用溢出，请减少单次上传文件数量";
+            if(rawMsg.includes("401")) return "令牌无效/过期，请重新生成GitHub私有令牌";
+            if(rawMsg.includes("422")) return "文件路径重复或参数格式错误";
+            if(rawMsg.includes("403")) return "令牌权限不足，需开启仓库Contents读写权限";
+            if(rawMsg.includes("network")) return "网络连接失败，请检查网络";
+            return "上传异常：" + rawMsg;
+        }
         // 全局变量
         let uploadMode = "img"; // img / file
         let uploadQuality = 0.75;
@@ -391,7 +400,7 @@
             })
         }
 
-        // 渲染待上传预览列表（区分图片/普通文件）
+        // 渲染待上传预览列表（简化渲染，减少闭包递归）
         function renderPending() {
             pendingList.innerHTML = "";
             pendingCount.innerText = `${pendingFiles.length}个`;
@@ -399,17 +408,16 @@
             pendingFiles.forEach((file, idx) => {
                 const div = document.createElement("div");
                 div.className = "pending-item";
+                // 分离读取逻辑，避免多层嵌套递归
                 if(/^image\//.test(file.type)) {
-                    const reader = new FileReader();
-                    reader.onload = e => {
-                        div.innerHTML = `
-                            <img src="${e.target.result}" alt="${file.name}">
-                            <button class="remove" data-idx="${idx}">&times;</button>
-                            <div class="size">${(file.size / 1024 / 1024).toFixed(2)}MB</div>
-                        `;
-                        pendingList.appendChild(div);
-                    }
-                    reader.readAsDataURL(file);
+                    const tempUrl = URL.createObjectURL(file);
+                    div.innerHTML = `
+                        <img src="${tempUrl}" alt="${file.name}">
+                        <button class="remove" data-idx="${idx}">&times;</button>
+                        <div class="size">${(file.size / 1024 / 1024).toFixed(2)}MB</div>
+                    `;
+                    // 释放临时url，减少内存堆栈占用
+                    div.querySelector("img").onload = () => URL.revokeObjectURL(tempUrl);
                 } else {
                     div.className += " pending-file-item";
                     div.innerHTML = `
@@ -418,10 +426,10 @@
                         <button class="remove" data-idx="${idx}">&times;</button>
                         <div class="size">${(file.size / 1024 / 1024).toFixed(2)}MB</div>
                     `;
-                    pendingList.appendChild(div);
                 }
+                pendingList.appendChild(div);
             })
-            // 删除单文件
+            // 删除单文件事件绑定
             $$(".pending-item .remove").forEach(btn => {
                 btn.onclick = e => {
                     const i = parseInt(e.target.dataset.idx);
@@ -471,8 +479,12 @@
             const randomHash = get4RandomHash();
             const fileName = `Leo_${timestamp}_${randomHash}_${targetFile.name}`;
             const fullPath = saveDir + fileName;
-            const arrayBuf = await targetFile.arrayBuffer();
-            const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuf)));
+            // 标准Base64转换（GitHub接口强制要求）
+            const base64Data = await new Promise((resolve) => {
+                const fr = new FileReader();
+                fr.onload = () => resolve(fr.result.split(",")[1]);
+                fr.readAsDataURL(targetFile);
+            });
             const res = await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.repo}/contents/${fullPath}`, {
                 method: "PUT",
                 headers: {
@@ -486,7 +498,7 @@
                 })
             })
             const data = await res.json();
-            if(!res.ok) throw new Error(data.message || "上传请求失败");
+            if(!res.ok) throw new Error(data.message || "请求异常");
             return {
                 customUrl: `${GITHUB_CONFIG.customDomain}/${fullPath}`,
                 rawUrl: `${GITHUB_CONFIG.rawDomain}/${fullPath}`,
@@ -496,17 +508,21 @@
             }
         }
 
-        // 批量上传按钮
+        // 批量上传按钮（完全复刻你参考项目安全串行循环，杜绝栈溢出）
         uploadBtn.onclick = async () => {
             if(pendingFiles.length === 0) return showToast("请先选择待上传文件", "error");
             uploadBtn.disabled = true;
             uploadBtn.innerHTML = `<span class="spinner"></span>上传中...`;
             const successItems = [];
+            // 复制队列，隔离原数组，同步串行逐个上传
+            const uploadQueue = [...pendingFiles];
             try {
-                for(const f of pendingFiles) {
-                    const result = await uploadSingle(f);
+                // 标准for of串行，每完成一个释放调用栈
+                for(const file of uploadQueue) {
+                    const result = await uploadSingle(file);
                     successItems.push(result);
                 }
+                // 写入本地历史
                 uploadHistory = [...successItems, ...uploadHistory];
                 localStorage.setItem("ghFileHistory", JSON.stringify(uploadHistory));
                 pendingFiles = [];
@@ -514,7 +530,9 @@
                 renderHistory();
                 showToast(`成功上传 ${successItems.length} 个文件`, "success");
             } catch(err) {
-                showToast("上传失败：" + err.message, "error");
+                // 翻译英文报错为中文提示
+                const chineseMsg = getChineseErrMsg(err.message);
+                showToast("上传失败：" + chineseMsg, "error");
             } finally {
                 uploadBtn.disabled = false;
                 uploadBtn.innerText = "上传所有文件";
