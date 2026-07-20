@@ -287,15 +287,24 @@
 
     <script>
         // ===================== 固定配置（内置Token，无需输入）=====================
-       const GITHUB_CONFIG = {
-    repo: "leoleex/leoleex.github.io",
-    branch: "main",
-    imgDir: "s/",
-    fileDir: "f/",
-    customDomain: "https://sc.l.cd",
-    rawDomain: "https://leoleex.github.io",
-    token: "YOUR_GITHUB_FINE_TOKEN"
-};
+        const GITHUB_CONFIG = {
+            repo: "leoleex/leoleex.github.io",
+            branch: "main",
+            imgDir: "s/",
+            fileDir: "f/",
+            customDomain: "https://sc.l.cd",
+            rawDomain: "https://leoleex.github.io",
+            token: "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"
+        };
+        // 生成4位随机字母数字哈希
+        function get4RandomHash() {
+            const chars = "0123456789abcdefghijklmnopqrstuvwxyz";
+            let res = "";
+            for(let i = 0; i < 4; i++){
+                res += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return res;
+        }
         // 全局变量
         let uploadMode = "img"; // img / file
         let uploadQuality = 0.75;
@@ -457,7 +466,10 @@
                 targetFile = file;
                 saveDir = GITHUB_CONFIG.fileDir;
             }
-            const fileName = Date.now() + "_" + targetFile.name;
+            // 新命名规则：Leo_(时间戳)_(四位随机哈希)_原文件名
+            const timestamp = Date.now();
+            const randomHash = get4RandomHash();
+            const fileName = `Leo_${timestamp}_${randomHash}_${targetFile.name}`;
             const fullPath = saveDir + fileName;
             const arrayBuf = await targetFile.arrayBuffer();
             const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuf)));
