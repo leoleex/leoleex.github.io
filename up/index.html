@@ -11,14 +11,27 @@
         body.dark-mode{--bg-gradient:linear-gradient(135deg,#2d1b4e 0%,#1a0a2e 100%);--container-bg:#1e1e2e;--text-primary:#ffffff;--text-secondary:#e0e0e0;--text-muted:#a0a0a0;--bg-light:#2a2a3e;--bg-hover:#3a3a4e;--border-color:#404050;--help-modal-bg:#1e1e2e;--shadow-color:rgba(0,0,0,0.6);--toast-bg:#2a2a3e}
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:"Georgia","Noto Serif SC","STSong","Songti SC","SimSun","KaiTi","楷体",serif;background:var(--bg-gradient);min-height:100vh;padding:20px;position:relative}
+        /* 顶部悬浮按钮 */
         .help-btn{position:fixed;top:20px;right:20px;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);color:white;border:none;font-size:24px;font-weight:bold;cursor:pointer;box-shadow:0 4px 12px rgba(240,147,251,0.4);transition:all 0.3s ease;z-index:1001;display:flex;align-items:center;justify-content:center}
         .help-btn:hover{transform:scale(1.1);box-shadow:0 6px 20px rgba(240,147,251,0.6)}
         .theme-btn{position:fixed;top:20px;right:80px;width:48px;height:48px;border-radius:50%;background:var(--container-bg);color:var(--text-primary);border:2px solid var(--border-color);font-size:24px;cursor:pointer;box-shadow:0 4px 12px var(--shadow-color);transition:all 0.3s ease;z-index:1001;display:flex;align-items:center;justify-content:center}
         .theme-btn:hover{transform:scale(1.1)}
+        /* 自定义解锁弹窗（全局最高层级） */
+        .unlock-modal{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+        .unlock-box{background:var(--container-bg);width:100%;max-width:420px;border-radius:20px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.4);animation:scaleIn 0.3s ease}
+        .unlock-title{font-size:22px;font-weight:600;color:var(--text-primary);text-align:center;margin-bottom:24px}
+        .unlock-input{width:100%;padding:14px 16px;border:2px solid var(--border-color);border-radius:12px;font-size:16px;color:var(--text-primary);background:var(--bg-light);outline:none;transition:0.2s;margin-bottom:12px}
+        .unlock-input:focus{border-color:#f093fb}
+        .unlock-tip{font-size:14px;text-align:center;margin-bottom:20px;height:20px}
+        .tip-error{color:#ef4444}
+        .tip-success{color:#48bb78}
+        .unlock-btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:600;color:white;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);cursor:pointer;transition:0.2s}
+        .unlock-btn:active{transform:scale(0.98)}
+        @keyframes scaleIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+        /* 原有样式不变 */
         .help-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:2000;padding:20px}
         .help-modal.show{display:flex}
         .help-content{background:var(--help-modal-bg);border-radius:20px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px var(--shadow-color);animation:scaleIn 0.3s ease}
-        @keyframes scaleIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
         .help-header{background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);padding:24px;border-radius:20px 20px 0 0;color:white;position:sticky;top:0}
         .help-header h2{font-size:24px;font-weight:700;margin-bottom:4px}
         .help-close{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.2);border:none;color:white;font-size:20px;cursor:pointer;transition:all 0.3s ease}
@@ -85,6 +98,7 @@
         .history-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
         .history-title{font-size:24px;font-weight:700;color:var(--text-primary)}
         .history-count{font-size:14px;color:var(--text-muted);background:var(--bg-light);padding:6px 12px;border-radius:20px}
+        /* PC表格 */
         .history-table{width:100%;border-collapse:collapse;background:var(--container-bg);border-radius:12px;overflow:hidden;box-shadow:0 2px 8px var(--shadow-color)}
         .history-table th{background:var(--bg-light);padding:16px 12px;text-align:left;font-size:14px;font-weight:600;color:var(--text-secondary);border-bottom:2px solid var(--border-color)}
         .history-table td{padding:12px;border-bottom:1px solid var(--border-color);vertical-align:middle}
@@ -113,7 +127,23 @@
         .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:2000;padding:20px}
         .modal.show{display:flex}
         .modal img{max-width:95%;max-height:95%;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+        /* 未解锁页面锁定 */
+        .page-lock{pointer-events:none;opacity:0.35;user-select:none}
+        /* 移动端卡片布局 */
+        .history-card-wrap{display:none;gap:16px;flex-direction:column}
+        .history-card{background:var(--bg-light);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+        .card-top-row{display:flex;align-items:center;gap:12px}
+        .card-btn-group{display:flex;gap:8px}
+        .card-thumb{width:60px;height:60px;border-radius:8px;object-fit:cover;cursor:pointer}
+        .card-main-link{word-break:break-all;font-family:monospace;font-size:12px;color:var(--text-primary);padding:8px 10px;background:var(--container-bg);border-radius:8px}
+        .card-backup-row{font-size:11px;color:var(--text-muted);word-break:break-all}
+        .copy-backup{color:#f093fb;cursor:pointer;margin-left:8px}
         @media(max-width:768px){
+            .unlock-box{padding:24px}
+            .unlock-title{font-size:20px}
+            /* 表格隐藏，卡片显示 */
+            .history-table{display:none !important;}
+            .history-card-wrap{display:flex !important;}
             .container{padding:20px}
             .header h1{font-size:24px}
             .header p{font-size:14px}
@@ -121,8 +151,6 @@
             .upload-area{min-width:100%}
             .options{flex-direction:column;width:100%}
             .option-group{width:100%;flex:none;min-width:100%}
-            .history-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
-            .history-table th,.history-table td{white-space:nowrap;min-width:80px}
             .thumb-cell{min-width:60px;width:60px}
             .thumb-img{width:50px;height:50px}
             .link-cell{max-width:200px;min-width:150px}
@@ -137,6 +165,7 @@
         }
         @media(max-width:480px){
             body{padding:8px}
+            .unlock-box{padding:20px}
             .container{padding:16px;border-radius:16px}
             .header h1{font-size:20px}
             .upload-area{padding:25px 15px}
@@ -148,7 +177,6 @@
             .pending-item .size{font-size:10px;padding:3px 6px}
             .history-header{flex-direction:column;gap:10px;align-items:flex-start}
             .history-title{font-size:18px}
-            .history-table th,.history-table td{padding:8px 6px;font-size:11px}
             .thumb-img{width:45px;height:45px}
             .thumb-cell{width:50px;min-width:50px}
             .link-cell{max-width:150px;min-width:120px}
@@ -171,6 +199,16 @@
 </head>
 
 <body>
+    <!-- 自制密码解锁弹窗 -->
+    <div class="unlock-modal" id="unlockModal">
+        <div class="unlock-box">
+            <h2 class="unlock-title">🔐 页面解锁验证</h2>
+            <input class="unlock-input" id="pwdInput" type="password" placeholder="请输入访问密码">
+            <div class="unlock-tip" id="tipText"></div>
+            <button class="unlock-btn" id="confirmUnlockBtn">验证解锁</button>
+        </div>
+    </div>
+
     <button class="help-btn" id="helpBtn">?</button>
     <button class="theme-btn" id="themeBtn">🌙</button>
     <div class="help-modal" id="helpModal">
@@ -226,7 +264,9 @@
             </div>
         </div>
     </div>
-    <div class="container">
+
+    <!-- 主页面容器 -->
+    <div class="container" id="mainWrap">
         <div class="header">
             <h1><strong>🦁Leo私人文件床</strong></h1>
             <h3><a style="color:#ff69b4; font-weight:bold; text-decoration:none;">Only for Leo</a></h3>
@@ -282,11 +322,12 @@
             </div>
         </div>
     </div>
+
     <div id="toast" class="toast"></div>
     <div id="modal" class="modal"><img id="modalImg" src="" alt="大图预览"></div>
 
     <script>
-        // ===================== 配置区（修改这两处即可，无明文令牌）=====================
+        // ===================== 配置区（仅修改这两处，无明文GitHub令牌）=====================
         const GITHUB_CONFIG = {
             repo: "leoleex/leoleex.github.io",
             branch: "main",
@@ -294,13 +335,15 @@
             fileDir: "f/",
             customDomain: "https://sc.l.cd",
             rawDomain: "https://leoleex.github.io",
-            // 粘贴控制台生成的加密密文
             encryptedToken: "DSEbAUFXPDkIOypCWwspJmByLgBZJTk/BBwhJmFMKnAeECAbHS4oLl1+FRE9OwQLKS8YUEwMEyQdAwdDGzEEOWUMIA4qPSNLMgktBnwDOg9aCjQ3Jy49P3tWUCQo"
         };
-        // 你设置的页面解锁密码（访问页面弹窗输入的密码）
+        // 页面解锁密码（弹窗输入的密码）
         const DECRYPT_PASSWORD = "jHoi45cIiOus";
+        // 密码缓存有效期 7天（毫秒）
+        const AUTH_EXPIRE = 7 * 24 * 60 * 60 * 1000;
+        const STORAGE_AUTH_KEY = "filebed_auth_info";
 
-        // 简易异或加解密（纯前端，无任何外部脚本依赖）
+        // 加解密函数
         function simpleXorCrypt(str, key) {
             let out = "";
             for (let i = 0; i < str.length; i++) {
@@ -309,44 +352,100 @@
             }
             return out;
         }
-        // 解密获取真实可用的GitHub令牌
+        // 解密获取真实令牌
         function getRealToken(inputPwd) {
             if(inputPwd !== DECRYPT_PASSWORD) return null;
             const decodeStr = atob(GITHUB_CONFIG.encryptedToken);
             return simpleXorCrypt(decodeStr, DECRYPT_PASSWORD);
         }
-
-        // 页面加载强制弹窗输入密码，验证通过才启用全部上传功能
-        let ghToken = "";
-        async function initAuth() {
-            let inputPwd = prompt("请输入页面解锁密码，解锁文件上传功能：");
-            while(true) {
-                if(!inputPwd) {
-                    alert("密码不能为空，刷新页面重新输入");
-                    location.reload();
-                    return;
+        // 保存登录状态到本地存储，7天有效期
+        function saveAuthCache() {
+            const cacheData = {
+                pass: DECRYPT_PASSWORD,
+                expire: Date.now() + AUTH_EXPIRE
+            };
+            localStorage.setItem(STORAGE_AUTH_KEY, JSON.stringify(cacheData));
+        }
+        // 读取缓存登录
+        function loadAuthCache() {
+            const cacheStr = localStorage.getItem(STORAGE_AUTH_KEY);
+            if(!cacheStr) return null;
+            try{
+                const data = JSON.parse(cacheStr);
+                if(Date.now() > data.expire) {
+                    localStorage.removeItem(STORAGE_AUTH_KEY);
+                    return null;
                 }
-                const realTk = getRealToken(inputPwd);
-                if(realTk) {
-                    ghToken = realTk;
-                    showToast("密码验证成功，可正常上传文件", "success");
-                    break;
-                } else {
-                    inputPwd = prompt("密码错误，请重新输入解锁密码：");
-                }
+                return data.pass;
+            }catch(e){
+                localStorage.removeItem(STORAGE_AUTH_KEY);
+                return null;
             }
         }
 
-        // 生成4位随机字母数字哈希
+        // DOM元素
+        const unlockModal = document.getElementById("unlockModal");
+        const pwdInput = document.getElementById("pwdInput");
+        const confirmUnlockBtn = document.getElementById("confirmUnlockBtn");
+        const tipText = document.getElementById("tipText");
+        const mainWrap = document.getElementById("mainWrap");
+
+        let ghToken = "";
+        let authPassed = false;
+
+        // 解锁验证逻辑
+        function doUnlock() {
+            const inputVal = pwdInput.value.trim();
+            tipText.className = "unlock-tip";
+            if(!inputVal) {
+                tipText.textContent = "密码不能为空";
+                tipText.classList.add("tip-error");
+                return;
+            }
+            const realTk = getRealToken(inputVal);
+            if(realTk) {
+                ghToken = realTk;
+                authPassed = true;
+                unlockModal.style.display = "none";
+                mainWrap.classList.remove("page-lock");
+                saveAuthCache();
+                showToast("验证成功，7天内无需重复输入密码", "success");
+            } else {
+                tipText.textContent = "密码错误，请重新输入";
+                tipText.classList.add("tip-error");
+                pwdInput.value = "";
+            }
+        }
+        // 点击按钮解锁
+        confirmUnlockBtn.onclick = doUnlock;
+        // 回车快速验证
+        pwdInput.onkeydown = e => {
+            if(e.key === "Enter") doUnlock();
+        }
+
+        // 页面初始化：读取缓存自动登录
+        const cachePass = loadAuthCache();
+        if(cachePass) {
+            const realTk = getRealToken(cachePass);
+            if(realTk) {
+                ghToken = realTk;
+                authPassed = true;
+                unlockModal.style.display = "none";
+                mainWrap.classList.remove("page-lock");
+            }
+        }else{
+            // 无有效缓存，锁定页面
+            mainWrap.classList.add("page-lock");
+        }
+
+        // 生成4位随机哈希
         function get4RandomHash() {
             const chars = "0123456789abcdefghijklmnopqrstuvwxyz";
             let res = "";
-            for(let i = 0; i < 4; i++){
-                res += chars[Math.floor(Math.random() * chars.length)];
-            }
+            for(let i = 0; i < 4; i++) res += chars[Math.floor(Math.random() * chars.length)];
             return res;
         }
-        // 错误中文翻译
+        // 中文错误提示
         function getChineseErrMsg(rawMsg) {
             if(rawMsg.includes("Maximum call stack size exceeded")) return "单次文件过多，减少文件后重试";
             if(rawMsg.includes("401")) return "令牌解密失败或密码错误";
@@ -360,7 +459,6 @@
         let uploadQuality = 0.75;
         let pendingFiles = [];
         let uploadHistory = JSON.parse(localStorage.getItem("ghFileHistory")) || [];
-        // DOM快捷选择器
         const $ = s => document.querySelector(s);
         const $$ = s => document.querySelectorAll(s);
         const toast = $("#toast");
@@ -379,9 +477,6 @@
         const helpModal = $("#helpModal");
         const closeHelpBtn = $("#closeHelpBtn");
         const compressionWrap = $("#compressionWrap");
-
-        // 页面加载先校验密码
-        initAuth();
 
         // 暗黑主题
         if(localStorage.getItem("darkMode") === "1") document.body.classList.add("dark-mode");
@@ -407,7 +502,6 @@
                 compressionWrap.classList.toggle("compression-hide", uploadMode === "file");
             }
         })
-
         // 压缩档位切换
         $$(".compression-option").forEach(el => {
             el.onclick = () => {
@@ -416,7 +510,6 @@
                 uploadQuality = parseFloat(el.dataset.quality);
             }
         })
-
         // 拖拽上传
         uploadArea.ondragover = e => { e.preventDefault(); uploadArea.classList.add("dragover"); }
         uploadArea.ondragleave = () => uploadArea.classList.remove("dragover");
@@ -441,7 +534,6 @@
                 renderPending();
             })
         }
-
         // 渲染待上传列表
         function renderPending() {
             pendingList.innerHTML = "";
@@ -477,7 +569,6 @@
                 }
             })
         }
-
         // 图片压缩
         async function compressImage(file, quality) {
             const losslessTypes = ["image/gif","image/svg+xml","image/avif","image/heic","image/bmp","image/ico"];
@@ -502,7 +593,6 @@
                 }
             })
         }
-
         // 单文件上传
         async function uploadSingle(file) {
             let targetFile, saveDir;
@@ -544,9 +634,9 @@
                 uploadTime: new Date().toLocaleString()
             }
         }
-
         // 批量上传按钮
         uploadBtn.onclick = async () => {
+            if(!authPassed) return showToast("请先完成页面密码解锁", "error");
             if(pendingFiles.length === 0) return showToast("请先选择待上传文件", "error");
             uploadBtn.disabled = true;
             uploadBtn.innerHTML = `<span class="spinner"></span>上传中...`;
@@ -571,8 +661,7 @@
                 uploadBtn.innerText = "上传所有文件";
             }
         }
-
-        // 渲染历史表格
+        // 渲染历史（PC表格 + 移动端卡片）
         function renderHistory() {
             historyCount.innerText = `${uploadHistory.length}个文件`;
             if(uploadHistory.length === 0) {
@@ -588,49 +677,77 @@
                 <table class="history-table">
                     <thead>
                         <tr>
-                            <th>预览</th>
+                            <th>操作</th>
+                            <th>图片</th>
                             <th>国内直链 sc.l.cd</th>
                             <th>兜底 github.io 链接</th>
-                            <th>操作</th>
                         </tr>
                     </thead>
                     <tbody>
             `;
+            let cardHtml = `<div class="history-card-wrap">`;
             uploadHistory.forEach((item, idx) => {
+                // 缩略图
                 let thumbHtml = "";
+                let cardThumb = "";
                 if(item.fileType === "img") {
                     thumbHtml = `<img class="thumb-img" src="${item.customUrl}" onclick="openPreview('${item.customUrl}')">`;
+                    cardThumb = `<img class="card-thumb" src="${item.customUrl}" onclick="openPreview('${item.customUrl}')">`;
                 } else {
                     thumbHtml = `<div class="file-thumb">📄</div>`;
+                    cardThumb = `<div class="file-thumb">📄</div>`;
                 }
+                // PC表格行
                 tableHtml += `
                     <tr>
+                        <td class="action-cell">
+                            <button class="btn-small btn-copy" onclick="copyMainUrl('${item.customUrl}')">复制</button>
+                            <button class="btn-small btn-delete" onclick="removeLocalRecord(${idx})">删除</button>
+                        </td>
                         <td class="thumb-cell">${thumbHtml}</td>
                         <td class="link-cell"><div class="link-text">${item.customUrl}</div></td>
-                        <td class="link-cell"><div class="link-text">${item.rawUrl}</div></td>
-                        <td class="action-cell">
-                            <button class="btn-small btn-copy" onclick="copyUrl('${item.customUrl}',this)">复制直链</button>
-                            <button class="btn-small btn-delete" onclick="removeLocalRecord(${idx})">删除本地记录</button>
+                        <td class="link-cell">
+                            <div class="link-text">${item.rawUrl}</div>
+                            <button class="btn-small btn-copy" onclick="copyBackupUrl('${item.rawUrl}')">复制兜底</button>
                         </td>
                     </tr>
                 `;
-            })
+                // 移动端卡片
+                cardHtml += `
+                    <div class="history-card">
+                        <div class="card-top-row">
+                            <div class="card-btn-group">
+                                <button class="btn-small btn-copy" onclick="copyMainUrl('${item.customUrl}')">复制</button>
+                                <button class="btn-small btn-delete" onclick="removeLocalRecord(${idx})">删除</button>
+                            </div>
+                            ${cardThumb}
+                        </div>
+                        <div class="card-main-link">${item.customUrl}</div>
+                        <div class="card-backup-row">
+                            兜底：${item.rawUrl}
+                            <span class="copy-backup" onclick="copyBackupUrl('${item.rawUrl}')">复制兜底</span>
+                        </div>
+                    </div>
+                `;
+            });
             tableHtml += `</tbody></table>`;
-            historyContainer.innerHTML = tableHtml;
+            cardHtml += `</div>`;
+            historyContainer.innerHTML = tableHtml + cardHtml;
         }
+        // 全局方法
         window.openPreview = url => {
             modalImg.src = url;
             modal.classList.add("show");
         }
-        window.copyUrl = async (url, btnEl) => {
+        // 复制国内主链接
+        window.copyMainUrl = async (url) => {
             await navigator.clipboard.writeText(url);
-            btnEl.classList.add("copied");
-            btnEl.innerText = "已复制";
-            setTimeout(()=>{
-                btnEl.classList.remove("copied");
-                btnEl.innerText = "复制直链";
-            }, 1300)
-            showToast("链接复制成功", "success");
+            showToast("国内链接复制成功", "success");
+        }
+        // 复制兜底github链接
+        window.copyBackupUrl = async (url) => {
+            await navigator.clipboard.writeText(url);
+            showToast("兜底链接复制成功", "success");
         }
         window.removeLocalRecord = idx => {
             uploadHistory.splice(idx, 1);
@@ -638,14 +755,12 @@
             renderHistory();
             showToast("已删除本地记录", "success");
         }
-
-        // 全局提示
+        // 全局轻提示
         function showToast(text, type="") {
             toast.innerText = text;
             toast.className = "toast show " + type;
             setTimeout(()=>toast.classList.remove("show"), 2600);
         }
-
         renderHistory();
     </script>
 </body>
